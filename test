@@ -1,29 +1,84 @@
-version: '3.7'
-
-services:
-  grafana:
-    build: './config/grafana'
-    ports:
-      - 3000:3000
-    volumes:
-      - ./grafana:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    networks:
-      monitoring:
-        aliases:
-          - grafana
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - 9090:9090
-    volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus:/prometheus
-    networks:
-      monitoring:
-        aliases:
-          - prometheus
-networks:
-  monitoring:
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "iteration": 1692710000000,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {"x":0,"y":0,"w":12,"h":8},
+      "id": 1,
+      "title": "HTTP Requests Count",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (uri, status) (rate(http_server_requests_seconds_count{uri=~\"$endpoint\", status=~\"$status\"}[1m]))",
+          "legendFormat": "{{uri}} {{status}}",
+          "interval": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {"x":12,"y":0,"w":12,"h":8},
+      "id": 2,
+      "title": "Average HTTP Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by(uri, status)(rate(http_server_requests_seconds_sum{uri=~\"$endpoint\", status=~\"$status\"}[1m])) / sum by(uri, status)(rate(http_server_requests_seconds_count{uri=~\"$endpoint\", status=~\"$status\"}[1m]))",
+          "legendFormat": "{{uri}} {{status}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "endpoint",
+        "type": "query",
+        "label": "Endpoint",
+        "datasource": "Prometheus",
+        "query": "label_values(http_server_requests_seconds_count, uri)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "status",
+        "type": "query",
+        "label": "HTTP Status",
+        "datasource": "Prometheus",
+        "query": "label_values(http_server_requests_seconds_count, status)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      }
+    ]
+  },
+  "schemaVersion": 37,
+  "style": "dark",
+  "tags": ["http", "spring", "actuator"],
+  "timezone": "browser",
+  "title": "HTTP Metrics Dashboard",
+  "version": 1
+}
